@@ -1,0 +1,706 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Spending Manager</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{background:#f1f5f9;color:#172033}
+.app{max-width:1200px;margin:auto;padding:18px}
+header{background:linear-gradient(120deg,#172554,#2563eb);color:white;padding:28px;border-radius:18px;margin-bottom:22px}
+header h1{font-size:28px}
+header p{color:#dbeafe;margin-top:8px}
+.nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.nav button{background:white;color:#334155;border:1px solid #cbd5e1;padding:12px 18px;border-radius:9px}
+button{cursor:pointer;border:0;font-weight:bold}
+.nav button.active{background:#2563eb;color:white}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.card{background:white;padding:20px;border-radius:14px;box-shadow:0 3px 12px #00000008}
+.card small{color:#64748b;font-weight:bold}
+.card h2{font-size:25px;margin-top:12px;color:#1e293b}
+.card .green{color:#16a34a}
+.card .red{color:#dc2626}
+.panel{background:white;padding:22px;border-radius:14px;margin-bottom:20px;box-shadow:0 3px 12px #00000008}
+.panel h2{font-size:20px;margin-bottom:17px;color:#1e293b}
+input,select{padding:12px;border:1px solid #cbd5e1;border-radius:8px;width:100%;background:#fff;color:#172033}
+input:focus,select:focus{outline:2px solid #93c5fd;border-color:#2563eb}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:13px}
+.field label{display:block;font-size:13px;color:#475569;margin-bottom:7px;font-weight:bold}
+.primary{background:#2563eb;color:white;padding:12px 18px;border-radius:8px}
+.secondary{background:#e2e8f0;color:#334155;padding:12px 18px;border-radius:8px}
+.danger{background:#fee2e2;color:#b91c1c;padding:8px 11px;border-radius:7px}
+.action{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.toolbar{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-bottom:15px}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{padding:13px;text-align:left;border-bottom:1px solid #e2e8f0;font-size:14px}
+th{background:#f8fafc;color:#475569}
+.table-wrap{overflow-x:auto}
+.tag{padding:5px 9px;border-radius:20px;background:#dbeafe;color:#1d4ed8;font-size:12px}
+.empty{text-align:center;color:#94a3b8;padding:25px}
+.progress{height:12px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin:15px 0}
+.progress div{height:100%;background:#2563eb;width:0%;transition:.3s}
+.bar-row{margin:15px 0}
+.bar-title{display:flex;justify-content:space-between;margin-bottom:7px;font-size:14px}
+.bar{height:12px;background:#e2e8f0;border-radius:20px;overflow:hidden}
+.bar div{height:100%;background:linear-gradient(90deg,#2563eb,#06b6d4);border-radius:20px}
+.hidden{display:none!important}
+.note{font-size:13px;color:#64748b;line-height:1.6}
+footer{text-align:center;color:#64748b;padding:20px;font-size:13px}
+@media(max-width:600px){
+.app{padding:10px}
+header{padding:22px}
+header h1{font-size:23px}
+.panel{padding:15px}
+.toolbar{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header>
+<h1>💰 Smart Spending Manager</h1>
+<p>Track your expenses • Manage your budget • Understand your spending</p>
+<p style="margin-top:15px">Personal Finance Management Dashboard</p>
+</header>
+
+<div class="nav">
+<button class="active" onclick="showPage('dashboard',this)">🏠 Dashboard</button>
+<button onclick="showPage('transactions',this)">📋 Transactions</button>
+<button onclick="showPage('analytics',this)">📊 Analytics</button>
+</div>
+
+<!-- DASHBOARD -->
+
+<section id="dashboard">
+
+<div class="cards">
+<div class="card">
+<small>MONTHLY BUDGET</small>
+<h2 id="budgetCard">₹0</h2>
+</div>
+<div class="card">
+<small>TOTAL EXPENSES</small>
+<h2 class="red" id="expenseCard">₹0</h2>
+</div>
+<div class="card">
+<small>REMAINING BALANCE</small>
+<h2 class="green" id="balanceCard">₹0</h2>
+</div>
+<div class="card">
+<small>TOTAL TRANSACTIONS</small>
+<h2 id="countCard">0</h2>
+</div>
+</div>
+
+<div class="panel">
+<h2>🎯 Monthly Budget</h2>
+<div class="field">
+<label>Set Your Monthly Budget (₹)</label>
+<input type="number" id="budgetInput" min="0" placeholder="Enter monthly budget">
+</div>
+<div class="action">
+<button class="primary" onclick="saveBudget()">Save Budget</button>
+</div>
+<div class="progress"><div id="budgetProgress"></div></div>
+<p id="budgetMessage" class="note">Set a budget to monitor your spending.</p>
+</div>
+
+<div class="panel">
+<h2>➕ Add New Expense</h2>
+
+<div class="form-grid">
+<div class="field">
+<label>Expense Name</label>
+<input id="expenseName" placeholder="Example: Lunch">
+</div>
+
+<div class="field">
+<label>Amount (₹)</label>
+<input type="number" id="amount" min="0.01" step="0.01" placeholder="Enter amount">
+</div>
+
+<div class="field">
+<label>Category</label>
+<select id="category">
+<option>Food</option>
+<option>Travel</option>
+<option>Education</option>
+<option>Shopping</option>
+<option>Bills</option>
+<option>Entertainment</option>
+<option>Health</option>
+<option>Others</option>
+</select>
+</div>
+
+<div class="field">
+<label>Date</label>
+<input type="date" id="date">
+</div>
+</div>
+
+<div class="action">
+<button class="primary" onclick="addExpense()">+ Add Expense</button>
+<button class="secondary" onclick="clearForm()">Clear</button>
+</div>
+<p id="formMessage" class="note" style="margin-top:10px"></p>
+</div>
+
+<div class="panel">
+<h2>🕒 Recent Transactions</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Name</th><th>Category</th><th>Date</th><th>Amount</th></tr>
+</thead>
+<tbody id="recentTable"></tbody>
+</table>
+</div>
+</div>
+
+</section>
+
+<!-- TRANSACTIONS -->
+
+<section id="transactions" class="hidden">
+
+<div class="panel">
+<h2>📋 Transaction Management</h2>
+<p class="note">Search, filter, edit and manage your expense records.</p>
+
+<div class="toolbar" style="margin-top:18px">
+<input id="search" placeholder="Search expenses..." oninput="renderTransactions()">
+<select id="filterCategory" onchange="renderTransactions()">
+<option value="">All Categories</option>
+<option>Food</option>
+<option>Travel</option>
+<option>Education</option>
+<option>Shopping</option>
+<option>Bills</option>
+<option>Entertainment</option>
+<option>Health</option>
+<option>Others</option>
+</select>
+<select id="filterMonth" onchange="renderTransactions()">
+<option value="">All Months</option>
+</select>
+</div>
+
+<div class="action" style="margin-bottom:15px">
+<button class="primary" onclick="exportCSV()">⬇ Export CSV</button>
+<button class="secondary" onclick="document.getElementById('csvFile').click()">⬆ Import CSV</button>
+<input type="file" id="csvFile" accept=".csv" class="hidden" onchange="importCSV(event)">
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Expense</th>
+<th>Category</th>
+<th>Date</th>
+<th>Amount</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="transactionTable"></tbody>
+</table>
+</div>
+</div>
+
+</section>
+
+<!-- ANALYTICS -->
+
+<section id="analytics" class="hidden">
+
+<div class="cards">
+<div class="card">
+<small>THIS MONTH</small>
+<h2 id="monthlyTotal">₹0</h2>
+</div>
+<div class="card">
+<small>HIGHEST CATEGORY</small>
+<h2 id="topCategory" style="font-size:19px">-</h2>
+</div>
+<div class="card">
+<small>AVERAGE EXPENSE</small>
+<h2 id="averageExpense">₹0</h2>
+</div>
+</div>
+
+<div class="panel">
+<h2>📊 Category-wise Analytics</h2>
+<div id="categoryChart"></div>
+</div>
+
+<div class="panel">
+<h2>📅 Monthly Spending Summary</h2>
+<div id="monthlyChart"></div>
+</div>
+
+<div class="panel">
+<h2>💡 Spending Insights</h2>
+<div id="insights" class="note"></div>
+</div>
+
+</section>
+
+<footer>
+Smart Spending Manager | Personal Expense Tracking System<br>
+Developed using HTML, CSS and JavaScript
+</footer>
+
+</div>
+
+<script>
+
+// APPLICATION DATA
+
+let expenses = JSON.parse(localStorage.getItem("smartExpenses") || "[]");
+let budget = Number(localStorage.getItem("smartBudget") || 0);
+let editingId = null;
+
+const categories = [
+"Food","Travel","Education","Shopping",
+"Bills","Entertainment","Health","Others"
+];
+
+const today = new Date().toISOString().slice(0,10);
+document.getElementById("date").value = today;
+document.getElementById("budgetInput").value = budget;
+
+// SAVE DATA
+
+function saveData(){
+    localStorage.setItem("smartExpenses",JSON.stringify(expenses));
+    localStorage.setItem("smartBudget",budget);
+}
+
+// SAFE HTML DISPLAY
+
+function safe(value){
+    return String(value).replace(/[&<>"']/g,c=>({
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#39;"
+    })[c]);
+}
+
+function money(value){
+    return "₹"+Number(value).toLocaleString("en-IN",{
+        maximumFractionDigits:2
+    });
+}
+
+// PAGE NAVIGATION
+
+function showPage(page,button){
+    document.querySelectorAll("section").forEach(s=>s.classList.add("hidden"));
+    document.getElementById(page).classList.remove("hidden");
+
+    document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
+    button.classList.add("active");
+
+    refresh();
+}
+
+// ADD / UPDATE EXPENSE
+
+function addExpense(){
+
+    let name=document.getElementById("expenseName").value.trim();
+    let amount=Number(document.getElementById("amount").value);
+    let category=document.getElementById("category").value;
+    let date=document.getElementById("date").value;
+    let msg=document.getElementById("formMessage");
+
+    if(!name || !date || !Number.isFinite(amount) || amount<=0){
+        msg.style.color="#dc2626";
+        msg.innerText="Please enter a valid name, amount and date.";
+        return;
+    }
+
+    if(editingId!==null){
+
+        let item=expenses.find(e=>e.id===editingId);
+
+        if(item){
+            Object.assign(item,{name,amount,category,date});
+        }
+
+        editingId=null;
+        document.querySelector("#dashboard .panel h2").innerText="➕ Add New Expense";
+    }
+    else{
+        expenses.push({
+            id:Date.now()+Math.random(),
+            name,amount,category,date
+        });
+    }
+
+    saveData();
+    clearForm();
+    refresh();
+
+    msg.style.color="#16a34a";
+    msg.innerText="Expense saved successfully!";
+}
+
+// CLEAR FORM
+
+function clearForm(){
+    document.getElementById("expenseName").value="";
+    document.getElementById("amount").value="";
+    document.getElementById("category").value="Food";
+    document.getElementById("date").value=today;
+    editingId=null;
+    document.querySelector("#dashboard .panel h2").innerText="➕ Add New Expense";
+}
+
+// EDIT EXPENSE
+
+function editExpense(id){
+    let item=expenses.find(e=>e.id===id);
+    if(!item)return;
+
+    showPage("dashboard",document.querySelector(".nav button"));
+
+    document.getElementById("expenseName").value=item.name;
+    document.getElementById("amount").value=item.amount;
+    document.getElementById("category").value=item.category;
+    document.getElementById("date").value=item.date;
+
+    editingId=id;
+    document.querySelector("#dashboard .panel h2").innerText="✏️ Edit Expense";
+
+    window.scrollTo({top:500,behavior:"smooth"});
+}
+
+// DELETE EXPENSE
+
+function deleteExpense(id){
+    if(!confirm("Delete this transaction?"))return;
+
+    expenses=expenses.filter(e=>e.id!==id);
+    saveData();
+    refresh();
+}
+
+// BUDGET
+
+function saveBudget(){
+    let value=Number(document.getElementById("budgetInput").value);
+
+    if(!Number.isFinite(value)||value<0){
+        alert("Enter a valid budget.");
+        return;
+    }
+
+    budget=value;
+    saveData();
+    refresh();
+    alert("Monthly budget saved!");
+}
+
+// MONTH HELPERS
+
+function monthKey(date){
+    return date.slice(0,7);
+}
+
+function currentMonth(){
+    return today.slice(0,7);
+}
+
+function monthName(key){
+    let [y,m]=key.split("-");
+    return new Date(Number(y),Number(m)-1,1)
+        .toLocaleString("en-IN",{month:"short",year:"numeric"});
+}
+
+// DASHBOARD
+
+function renderDashboard(){
+
+    let monthExpenses=expenses.filter(e=>monthKey(e.date)===currentMonth());
+
+    let total=monthExpenses.reduce((s,e)=>s+e.amount,0);
+    let balance=budget-total;
+
+    document.getElementById("budgetCard").innerText=money(budget);
+    document.getElementById("expenseCard").innerText=money(total);
+    document.getElementById("balanceCard").innerText=money(balance);
+    document.getElementById("countCard").innerText=expenses.length;
+
+    document.getElementById("balanceCard").className=balance<0?"red":"green";
+
+    let percent=budget>0?(total/budget)*100:0;
+
+    document.getElementById("budgetProgress").style.width=
+        Math.min(percent,100)+"%";
+
+    document.getElementById("budgetProgress").style.background=
+        percent>100?"#dc2626":percent>80?"#f59e0b":"#16a34a";
+
+    document.getElementById("budgetMessage").innerText=
+        budget===0?"Set a monthly budget to monitor spending.":
+        percent>100?"You have exceeded your monthly budget.":
+        "You have used "+percent.toFixed(1)+"% of your monthly budget.";
+
+    document.getElementById("recentTable").innerHTML=
+        [...expenses].sort((a,b)=>b.date.localeCompare(a.date))
+        .slice(0,5).map(e=>`
+        <tr>
+        <td>${safe(e.name)}</td>
+        <td><span class="tag">${safe(e.category)}</span></td>
+        <td>${safe(e.date)}</td>
+        <td>${money(e.amount)}</td>
+        </tr>`).join("") ||
+        '<tr><td colspan="4" class="empty">No transactions yet.</td></tr>';
+}
+
+// TRANSACTIONS
+
+function renderTransactions(){
+
+    let search=document.getElementById("search").value.toLowerCase();
+    let category=document.getElementById("filterCategory").value;
+    let month=document.getElementById("filterMonth").value;
+
+    let filtered=expenses.filter(e=>
+        (e.name.toLowerCase().includes(search) ||
+         e.category.toLowerCase().includes(search)) &&
+        (!category||e.category===category) &&
+        (!month||monthKey(e.date)===month)
+    );
+
+    document.getElementById("transactionTable").innerHTML=
+        [...filtered].sort((a,b)=>b.date.localeCompare(a.date))
+        .map(e=>`
+        <tr>
+        <td>${safe(e.name)}</td>
+        <td><span class="tag">${safe(e.category)}</span></td>
+        <td>${safe(e.date)}</td>
+        <td><b>${money(e.amount)}</b></td>
+        <td>
+        <button class="secondary" onclick="editExpense(${e.id})">Edit</button>
+        <button class="danger" onclick="deleteExpense(${e.id})">Delete</button>
+        </td>
+        </tr>`).join("") ||
+        '<tr><td colspan="5" class="empty">No matching transactions found.</td></tr>';
+}
+
+// FILTER MONTHS
+
+function renderMonthOptions(){
+    let select=document.getElementById("filterMonth");
+    let old=select.value;
+    let months=[...new Set(expenses.map(e=>monthKey(e.date)))].sort().reverse();
+
+    select.innerHTML='<option value="">All Months</option>'+
+        months.map(m=>`<option value="${m}">${monthName(m)}</option>`).join("");
+
+    select.value=months.includes(old)?old:"";
+}
+
+// ANALYTICS
+
+function renderAnalytics(){
+
+    let current=expenses.filter(e=>monthKey(e.date)===currentMonth());
+    let total=current.reduce((s,e)=>s+e.amount,0);
+
+    document.getElementById("monthlyTotal").innerText=money(total);
+
+    document.getElementById("averageExpense").innerText=
+        money(current.length?total/current.length:0);
+
+    let totals={};
+
+    categories.forEach(c=>totals[c]=0);
+
+    expenses.forEach(e=>{
+        if(totals[e.category]!==undefined){
+            totals[e.category]+=e.amount;
+        }
+    });
+
+    let used=Object.entries(totals).filter(x=>x[1]>0)
+        .sort((a,b)=>b[1]-a[1]);
+
+    document.getElementById("topCategory").innerText=
+        used.length?used[0][0]:"-";
+
+    let max=Math.max(...Object.values(totals),1);
+
+    document.getElementById("categoryChart").innerHTML=
+        used.map(([name,value])=>`
+        <div class="bar-row">
+        <div class="bar-title">
+        <b>${safe(name)}</b>
+        <span>${money(value)}</span>
+        </div>
+        <div class="bar">
+        <div style="width:${value/max*100}%"></div>
+        </div>
+        </div>`).join("") ||
+        '<p class="empty">Add expenses to view analytics.</p>';
+
+    // Monthly totals
+
+    let months={};
+
+    expenses.forEach(e=>{
+        let m=monthKey(e.date);
+        months[m]=(months[m]||0)+e.amount;
+    });
+
+    let monthEntries=Object.entries(months).sort((a,b)=>a[0].localeCompare(b[0])).slice(-6);
+    let maxMonth=Math.max(...monthEntries.map(x=>x[1]),1);
+
+    document.getElementById("monthlyChart").innerHTML=
+        monthEntries.map(([m,value])=>`
+        <div class="bar-row">
+        <div class="bar-title">
+        <b>${monthName(m)}</b>
+        <span>${money(value)}</span>
+        </div>
+        <div class="bar">
+        <div style="width:${value/maxMonth*100}%"></div>
+        </div>
+        </div>`).join("") ||
+        '<p class="empty">No monthly data available.</p>';
+
+    let highest=used[0];
+    document.getElementById("insights").innerHTML=
+        expenses.length?
+        `• Total recorded transactions: <b>${expenses.length}</b><br>
+         • Highest spending category: <b>${highest?safe(highest[0]):"None"}</b><br>
+         • Current month's spending: <b>${money(total)}</b><br>
+         • Monthly budget: <b>${money(budget)}</b><br>
+         • Remaining budget: <b>${money(budget-total)}</b>`:
+        "Add transactions to generate spending insights.";
+}
+
+// CSV EXPORT
+
+function exportCSV(){
+
+    let rows=[["Name","Category","Date","Amount"]];
+
+    expenses.forEach(e=>{
+        rows.push([e.name,e.category,e.date,e.amount]);
+    });
+
+    let csv=rows.map(row=>
+        row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")
+    ).join("\n");
+
+    let blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+    let url=URL.createObjectURL(blob);
+    let a=document.createElement("a");
+
+    a.href=url;
+    a.download="smart_spending_transactions.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+
+// CSV IMPORT
+
+function parseCSV(text){
+    let rows=[];
+    let row=[];
+    let value="";
+    let quoted=false;
+
+    for(let i=0;i<text.length;i++){
+        let c=text[i];
+
+        if(c==='"'&&quoted&&text[i+1]==='"'){
+            value+='"';i++;
+        }
+        else if(c==='"'){
+            quoted=!quoted;
+        }
+        else if(c===","&&!quoted){
+            row.push(value);value="";
+        }
+        else if((c==="\n"||c==="\r")&&!quoted){
+            if(c==="\r"&&text[i+1]==="\n")i++;
+            row.push(value);
+            if(row.some(x=>x!==""))rows.push(row);
+            row=[];value="";
+        }
+        else value+=c;
+    }
+
+    row.push(value);
+    if(row.some(x=>x!==""))rows.push(row);
+
+    return rows;
+}
+
+function importCSV(event){
+
+    let file=event.target.files[0];
+    if(!file)return;
+
+    let reader=new FileReader();
+
+    reader.onload=()=>{
+        try{
+            let rows=parseCSV(reader.result.replace(/^\uFEFF/,""));
+            let imported=rows.slice(1).map(row=>({
+                name:String(row[0]||"").trim(),
+                category:String(row[1]||"Others").trim(),
+                date:String(row[2]||"").trim(),
+                amount:Number(row[3])
+            })).filter(e=>
+                e.name&&categories.includes(e.category)&&
+                /^\d{4}-\d{2}-\d{2}$/.test(e.date)&&
+                Number.isFinite(e.amount)&&e.amount>0
+            );
+
+            imported.forEach(e=>expenses.push({...e,id:Date.now()+Math.random()}));
+
+            saveData();
+            refresh();
+            alert(imported.length+" transactions imported.");
+        }
+        catch(error){
+            alert("Unable to read this CSV file.");
+        }
+
+        event.target.value="";
+    };
+
+    reader.readAsText(file);
+}
+
+// REFRESH EVERYTHING
+
+function refresh(){
+    document.getElementById("budgetInput").value=budget;
+    renderDashboard();
+    renderMonthOptions();
+    renderTransactions();
+    renderAnalytics();
+}
+
+// INITIAL LOADING
+
+refresh();
+
+</script>
+</body>
+</html>
